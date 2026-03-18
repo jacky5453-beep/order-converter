@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>網購單轉檔系統</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:    #1a1a2e;
+  --paper:  #f4f1eb;
+  --cream:  #ede8de;
+  --warm:   #e8e0d0;
+  --accent: #c84b31;
+  --gold:   #d4a017;
+  --green:  #2d6a4f;
+  --muted:  #7a7065;
+  --border: #c8bfb0;
+  --r: 4px;
+}
+
+html { font-size: 14px; }
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  position: relative;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* HEADER */
+header {
+  position: relative; z-index: 10;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0 40px;
+  display: flex; align-items: stretch;
+  border-bottom: 3px solid var(--accent);
+}
+.header-brand {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 0;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  padding-right: 32px; margin-right: 32px;
+}
+.brand-mark {
+  width: 46px; height: 46px;
+  border: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; position: relative;
+}
+.brand-mark::before {
+  content: '';
+  position: absolute; inset: 3px;
+  border: 1px solid rgba(212,160,23,0.35);
+}
+.brand-text h1 { font-size: 17px; font-weight: 900; letter-spacing: 2px; }
+.brand-text p  {
+  font-size: 10px; color: rgba(244,241,235,0.45);
+  letter-spacing: 3px; text-transform: uppercase;
+  margin-top: 3px; font-family: 'IBM Plex Mono', monospace;
+}
+.header-meta {
+  display: flex; align-items: center; gap: 24px;
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: rgba(244,241,235,0.4);
+}
+.header-pill {
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 4px 12px; border-radius: 20px; font-size: 10px;
+}
+
+/* LAYOUT */
+.layout {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: calc(100vh - 88px);
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--cream);
+  border-right: 1px solid var(--border);
+  padding: 28px 22px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.sec-label {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--muted); font-family: 'IBM Plex Mono', monospace;
+  margin-bottom: 10px; padding-bottom: 7px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Upload — label-based, NO z-index fighting */
+/* Hidden real file input */
+#fileInput {
+  display: none;
+}
+
+.upload-label {
+  display: block;
+  border: 2px dashed var(--border);
+  background: var(--paper);
+  border-radius: var(--r);
+  padding: 26px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.upload-label:hover {
+  border-color: var(--accent);
+  background: rgba(200,75,49,0.04);
+}
+.upload-label.dragover {
+  border-color: var(--accent);
+  background: rgba(200,75,49,0.06);
+  transform: scale(1.01);
+}
+.upload-label.loaded {
+  border-color: var(--green);
+  border-style: solid;
+  background: rgba(45,106,79,0.04);
+}
+
+.upload-icon {
+  width: 52px; height: 52px;
+  border: 1.5px solid var(--border);
+  margin: 0 auto 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; background: var(--paper);
+  transition: all 0.2s;
+}
+.upload-label:hover .upload-icon,
+.upload-label.dragover .upload-icon { border-color: var(--accent); transform: translateY(-2px); }
+.upload-label.loaded .upload-icon   { border-color: var(--green); }
+
+.upload-label h3 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.upload-label p  { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+.file-tag {
+  display: none; align-items: center; gap: 8px;
+  background: var(--warm); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 8px 11px; margin-top: 10px;
+}
+.file-tag.show { display: flex; }
+.file-tag .fn {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+  color: var(--green); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.file-tag .fs { font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+
+/* Flow steps */
+.flow-steps { display: flex; flex-direction: column; }
+.flow-step {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 11px 0; border-bottom: 1px dashed var(--border);
+  opacity: 0.35; transition: opacity 0.3s;
+}
+.flow-step:last-child { border-bottom: none; }
+.flow-step.active { opacity: 1; }
+.flow-step.done   { opacity: 0.65; }
+.flow-num {
+  width: 24px; height: 24px;
+  border: 1.5px solid var(--border); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace; flex-shrink: 0;
+  margin-top: 1px; transition: all 0.3s;
+}
+.flow-step.active .flow-num { border-color: var(--accent); color: var(--accent); }
+.flow-step.done   .flow-num { background: var(--green); border-color: var(--green); color: #fff; }
+.flow-info h4 { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+.flow-info p  { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+/* Buttons */
+.btn-primary {
+  width: 100%; border: none; border-radius: var(--r);
+  padding: 13px; font-size: 14px; font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s; letter-spacing: 0.5px;
+  background: var(--accent); color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #a83926; transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(200,75,49,0.38);
+}
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+
+.btn-export {
+  width: 100%; border: none; border-radius: var(--r);
+  padding: 13px; font-size: 14px; font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s; letter-spacing: 0.5px;
+  background: var(--green); color: #fff;
+}
+.btn-export:hover:not(:disabled) {
+  background: #1f4d38; transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(45,106,79,0.38);
+}
+.btn-export:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+
+.btn-outline {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 10px; font-size: 12px; font-weight: 500;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer;
+  background: transparent; color: var(--muted); transition: all 0.2s;
+}
+.btn-outline:hover { border-color: var(--muted); color: var(--ink); }
+
+.spin-wrap {
+  display: none; align-items: center; justify-content: center;
+  gap: 8px; color: var(--accent); font-size: 12px;
+  padding: 6px 0;
+}
+.spin-wrap.show { display: flex; }
+.spin {
+  width: 16px; height: 16px;
+  border: 2px solid var(--cream); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.65s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Log terminal */
+.log-term {
+  background: var(--ink); border-radius: var(--r);
+  padding: 12px; font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; max-height: 120px; overflow-y: auto; line-height: 1.7;
+}
+.log-term::-webkit-scrollbar { width: 3px; }
+.log-term::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
+.log-line      { color: rgba(244,241,235,0.35); }
+.log-line.ok   { color: #73d13d; }
+.log-line.warn { color: #ffc53d; }
+.log-line.err  { color: #ff7875; }
+.log-line.info { color: #69b1ff; }
+
+/* CONTENT */
+.content { padding: 30px; overflow: auto; }
+
+/* Stats */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px; margin-bottom: 26px;
+}
+.stat-card {
+  background: var(--paper); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 18px;
+  position: relative; overflow: hidden;
+  animation: slideUp 0.4s ease both;
+}
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.10s; }
+.stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-card:nth-child(4) { animation-delay: 0.20s; }
+@keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.stat-card::before {
+  content: ''; position: absolute; left:0; top:0; bottom:0;
+  width: 3px; background: var(--accent);
+}
+.stat-card:nth-child(2)::before { background: var(--gold); }
+.stat-card:nth-child(3)::before { background: var(--green); }
+.stat-card:nth-child(4)::before { background: var(--muted); }
+.stat-val {
+  font-size: 30px; font-weight: 900;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--ink); line-height: 1; margin-bottom: 4px;
+}
+.stat-lbl { font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+/* Placeholder */
+.placeholder {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 400px; text-align: center; gap: 10px;
+}
+.placeholder-art { font-size: 60px; opacity: 0.12; margin-bottom: 6px; }
+.placeholder h2  { font-size: 17px; font-weight: 700; color: var(--muted); }
+.placeholder p   { font-size: 12px; color: var(--border); max-width: 260px; line-height: 1.7; }
+
+/* Table */
+.tbl-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.tbl-header h2 { font-size: 14px; font-weight: 900; letter-spacing: 0.5px; }
+.count-badge {
+  background: var(--ink); color: var(--paper);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+}
+.limit-note { margin-left: auto; font-size: 10px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+
+.filter-bar { margin-bottom: 14px; }
+.filter-input {
+  width: 100%; max-width: 400px;
+  background: var(--paper); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 8px 12px;
+  font-size: 12px; font-family: 'Noto Sans TC', sans-serif;
+  color: var(--ink); outline: none;
+}
+.filter-input:focus { border-color: var(--accent); }
+.filter-input::placeholder { color: var(--border); }
+
+.tbl-wrap {
+  overflow-x: auto; border: 1px solid var(--border);
+  border-radius: var(--r); background: var(--paper);
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead tr { background: var(--ink); color: var(--paper); }
+th {
+  padding: 10px 15px; text-align: left;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  white-space: nowrap; font-family: 'IBM Plex Mono', monospace;
+}
+tbody tr:nth-child(even) { background: var(--cream); }
+tbody tr:hover { background: rgba(200,75,49,0.05); }
+td {
+  padding: 9px 15px; border-bottom: 1px solid var(--border);
+  white-space: nowrap; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+}
+tbody tr:last-child td { border-bottom: none; }
+tr.grp td { border-top: 2px solid var(--warm); }
+
+.c-muted  { color: var(--muted); font-size: 11px; }
+.c-bold   { font-weight: 600; }
+.c-code   { color: var(--accent); font-weight: 600; }
+.c-right  { text-align: right; }
+.c-price  { text-align: right; color: var(--green); font-weight: 600; }
+.c-unit   { color: var(--muted); }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Hidden file input — outside all stacking contexts -->
+<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;">
+
+<header>
+  <div class="header-brand">
+    <div class="brand-mark">📦</div>
+    <div class="brand-text">
+      <h1>網購單轉檔系統</h1>
+      <p>E-Commerce Order Converter</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span>官網訂單 → ERP 匯入格式</span>
+    <span class="header-pill">v2.1</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div>
+      <div class="sec-label">步驟一　上傳官網訂單</div>
+
+      <!-- label triggers the hidden input safely -->
+      <label class="upload-label" id="uploadLabel" for="fileInput">
+        <div class="upload-icon">📊</div>
+        <h3>拖曳或點擊上傳</h3>
+        <p>支援 .xlsx / .xls / .csv<br>官網下載的訂單格式</p>
+      </label>
+
+      <div class="file-tag" id="fileTag">
+        <span>✅</span>
+        <span class="fn" id="fileName">—</span>
+        <span class="fs" id="fileSize">—</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-label">處理流程</div>
+      <div class="flow-steps">
+        <div class="flow-step active" id="fs1">
+          <div class="flow-num" id="fn1">1</div>
+          <div class="flow-info"><h4>上傳官網訂單</h4><p>拖曳或選擇 xlsx/xls 檔案</p></div>
+        </div>
+        <div class="flow-step" id="fs2">
+          <div class="flow-num" id="fn2">2</div>
+          <div class="flow-info"><h4>轉換資料格式</h4><p>自動比對欄位、整理明細</p></div>
+        </div>
+        <div class="flow-step" id="fs3">
+          <div class="flow-num" id="fn3">3</div>
+          <div class="flow-info"><h4>預覽確認</h4><p>確認轉換資料正確性</p></div>
+        </div>
+        <div class="flow-step" id="fs4">
+          <div class="flow-num" id="fn4">4</div>
+          <div class="flow-info"><h4>匯出 ERP 格式</h4><p>下載可匯入的 xlsx 檔案</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="sec-label">操作</div>
+      <button class="btn-primary" id="btnConvert" disabled>⚡ 開始分析轉換</button>
+      <div class="spin-wrap" id="spinWrap"><div class="spin"></div><span>資料處理中...</span></div>
+      <button class="btn-export" id="btnExport" disabled>⬇ 匯出 ERP 格式 (.xlsx)</button>
+      <button class="btn-outline" id="btnReset">↺ 重新上傳</button>
+    </div>
+
+    <div>
+      <div class="sec-label">系統訊息</div>
+      <div class="log-term" id="logTerm">
+        <div class="log-line">> 系統就緒，等待上傳...</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <div class="placeholder" id="placeholder">
+      <div class="placeholder-art">📋</div>
+      <h2>尚未載入資料</h2>
+      <p>請在左側上傳官網訂單 Excel 檔案，系統將自動轉換成 ERP 匯入格式。</p>
+    </div>
+
+    <div id="resultSection" style="display:none;">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-val" id="sOrders">0</div><div class="stat-lbl">訂單數</div></div>
+        <div class="stat-card"><div class="stat-val" id="sRows">0</div><div class="stat-lbl">明細筆數</div></div>
+        <div class="stat-card"><div class="stat-val" id="sSkus">0</div><div class="stat-lbl">不重複貨號</div></div>
+        <div class="stat-card"><div class="stat-val" id="sTotal">—</div><div class="stat-lbl">金額合計</div></div>
+      </div>
+
+      <div id="tableSec">
+        <div class="tbl-header">
+          <h2>轉換預覽</h2>
+          <span class="count-badge" id="countBadge">0 筆</span>
+          <span class="limit-note" id="limitNote"></span>
+        </div>
+        <div class="filter-bar">
+          <input class="filter-input" id="filterInput" placeholder="🔍 快速篩選：輸入貨號、訂單編號…">
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>訂單時間</th>
+                <th>訂單編號</th>
+                <th>客戶編號</th>
+                <th>產品貨號2</th>
+                <th>產品數量</th>
+                <th>產品實際成交價</th>
+                <th>產品單位</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── Wait for DOM + XLSX lib ───────────────────
+window.addEventListener('DOMContentLoaded', function () {
+
+  // Check XLSX loaded
+  if (typeof XLSX === 'undefined') {
+    log('⚠ XLSX 函式庫未載入，請確認網路連線後重新整理頁面', 'err');
+  } else {
+    log('XLSX 函式庫載入完成', 'ok');
+  }
+
+  var allData   = [];
+  var uploadedFile = null;
+
+  // DOM refs
+  var fileInput   = document.getElementById('fileInput');
+  var uploadLabel = document.getElementById('uploadLabel');
+  var btnConvert  = document.getElementById('btnConvert');
+  var btnExport   = document.getElementById('btnExport');
+  var btnReset    = document.getElementById('btnReset');
+  var filterInput = document.getElementById('filterInput');
+
+  // ── File input change ─────────────────────
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files && fileInput.files.length > 0) {
+      handleFile(fileInput.files[0]);
+    }
+  });
+
+  // ── Drag & drop on label ──────────────────
+  uploadLabel.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    uploadLabel.classList.add('dragover');
+  });
+  uploadLabel.addEventListener('dragleave', function (e) {
+    e.preventDefault();
+    uploadLabel.classList.remove('dragover');
+  });
+  uploadLabel.addEventListener('drop', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    uploadLabel.classList.remove('dragover');
+    var files = e.dataTransfer ? e.dataTransfer.files : null;
+    if (files && files.length > 0) handleFile(files[0]);
+  });
+
+  // ── Handle selected file ──────────────────
+  function handleFile(file) {
+    uploadedFile = file;
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = fmtBytes(file.size);
+    document.getElementById('fileTag').classList.add('show');
+    uploadLabel.classList.add('loaded');
+    btnConvert.disabled = false;
+    log('已選擇：' + file.name, 'info');
+  }
+
+  // ── Convert button ────────────────────────
+  btnConvert.addEventListener('click', function () {
+    if (!uploadedFile) {
+      log('請先選擇檔案', 'warn');
+      return;
+    }
+    if (typeof XLSX === 'undefined') {
+      log('XLSX 函式庫未載入，請重新整理頁面', 'err');
+      return;
+    }
+    startConvert(uploadedFile);
+  });
+
+  // ── Export button ─────────────────────────
+  btnExport.addEventListener('click', function () {
+    doExport(allData);
+  });
+
+  // ── Reset button ──────────────────────────
+  btnReset.addEventListener('click', function () {
+    allData = [];
+    uploadedFile = null;
+    fileInput.value = '';
+    uploadLabel.classList.remove('loaded');
+    document.getElementById('fileTag').classList.remove('show');
+    btnConvert.disabled = true;
+    btnExport.disabled  = true;
+    document.getElementById('placeholder').style.display = '';
+    document.getElementById('resultSection').style.display = 'none';
+    filterInput.value = '';
+    document.getElementById('logTerm').innerHTML = '<div class="log-line">> 系統就緒，等待上傳...</div>';
+    setStep(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ── Filter ────────────────────────────────
+  filterInput.addEventListener('input', function () {
+    var q = filterInput.value.trim().toLowerCase();
+    var data = q
+      ? allData.filter(function (r) {
+          return r.code.toLowerCase().indexOf(q) >= 0 ||
+                 r.ono.toLowerCase().indexOf(q)  >= 0 ||
+                 r.cust.toLowerCase().indexOf(q) >= 0;
+        })
+      : allData;
+    renderTable(data);
+  });
+
+  // ── Core convert logic ────────────────────
+  function startConvert(file) {
+    btnConvert.disabled = true;
+    document.getElementById('spinWrap').classList.add('show');
+    log('讀取檔案中…', 'info');
+    setStep(2);
+
+    var reader = new FileReader();
+
+    reader.onerror = function () {
+      log('檔案讀取失敗', 'err');
+      document.getElementById('spinWrap').classList.remove('show');
+      btnConvert.disabled = false;
+    };
+
+    reader.onload = function (e) {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb   = XLSX.read(data, { type: 'array', cellDates: true });
+        var sheetName = wb.SheetNames[0];
+        var ws   = wb.Sheets[sheetName];
+        var rows = XLSX.utils.sheet_to_json(ws, {
+          header: 1, raw: false, dateNF: 'yyyy-mm-dd hh:mm:ss'
+        });
+
+        log('工作表：' + sheetName + '，共 ' + (rows.length - 1) + ' 列', 'ok');
+
+        if (rows.length < 2) throw new Error('檔案無資料列');
+
+        var headers = rows[0].map(function (h) { return String(h || '').trim(); });
+        var col = buildColMap(headers);
+        log('欄位對應完成', 'ok');
+
+        allData = [];
+        var skipped = 0;
+
+        for (var i = 1; i < rows.length; i++) {
+          var r = rows[i];
+          if (!r || r.every(function (c) { return c === '' || c == null; })) continue;
+
+          var g = function (k) {
+            return col[k] !== undefined ? String(r[col[k]] != null ? r[col[k]] : '').trim() : '';
+          };
+
+          var time  = normalDate(g('訂單時間'));
+          var ono   = g('訂單編號');
+          var cust  = g('客戶編號');
+          var pcode = g('產品貨號2') || g('產品貨號');
+          var qty   = g('產品數量');
+          var price = g('產品實際成交價');
+          var unit  = g('產品單位');
+
+          if (!ono || !pcode) { skipped++; continue; }
+
+          // 主商品
+          allData.push({ time: time, ono: ono, cust: cust, code: pcode, qty: qty, price: price, unit: unit });
+
+          // 加購商品
+          var addCode = g('加購產品貨號');
+          var addQty  = g('加購產品數量');
+          if (addCode) {
+            allData.push({ time: time, ono: ono, cust: cust, code: addCode, qty: addQty || '1', price: '', unit: '' });
+          }
+
+          // 贈品
+          var gCode = g('贈品貨號');
+          var gQty  = g('贈品數量');
+          var gSpec = g('贈品規格');
+          if (gCode) {
+            allData.push({ time: time, ono: ono, cust: cust, code: gCode, qty: gQty || '1', price: '0', unit: gSpec });
+          }
+        }
+
+        if (skipped > 0) log('略過 ' + skipped + ' 筆無效資料', 'warn');
+        log('轉換完成，共 ' + allData.length + ' 筆明細', 'ok');
+        setStep(3);
+
+        renderStats(allData);
+        renderTable(allData);
+
+        document.getElementById('placeholder').style.display = 'none';
+        document.getElementById('resultSection').style.display = 'block';
+        btnExport.disabled = false;
+        setStep(4);
+
+      } catch (err) {
+        log('錯誤：' + err.message, 'err');
+        btnConvert.disabled = false;
+      }
+
+      document.getElementById('spinWrap').classList.remove('show');
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
+
+  // ── Col map ───────────────────────────────
+  function buildColMap(headers) {
+    var targets = [
+      '訂單時間','訂單編號','客戶編號',
+      '產品貨號2','產品貨號','產品數量','產品實際成交價','產品單位',
+      '加購產品名稱','加購產品貨號','加購產品數量',
+      '贈品名稱','贈品數量','贈品規格','贈品貨號'
+    ];
+    var map = {};
+    headers.forEach(function (h, i) {
+      targets.forEach(function (t) {
+        if (h === t || h.indexOf(t) >= 0) map[t] = i;
+      });
+    });
+    return map;
+  }
+
+  // ── Date normalize ────────────────────────
+  function normalDate(val) {
+    if (!val) return '';
+    if (/^\d{4}-\d{2}-\d{2}/.test(val)) return val;
+    var d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      var p = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) +
+             ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+    }
+    return val;
+  }
+
+  // ── Stats ─────────────────────────────────
+  function renderStats(data) {
+    var orders = {};
+    var skus   = {};
+    var total  = 0;
+    data.forEach(function (r) {
+      orders[r.ono]  = 1;
+      skus[r.code]   = 1;
+      total += (parseFloat(r.price) || 0) * (parseFloat(r.qty) || 0);
+    });
+    document.getElementById('sOrders').textContent = Object.keys(orders).length;
+    document.getElementById('sRows').textContent   = data.length;
+    document.getElementById('sSkus').textContent   = Object.keys(skus).length;
+    document.getElementById('sTotal').textContent  = total > 0 ? '$' + Math.round(total).toLocaleString() : '—';
+  }
+
+  // ── Table render ──────────────────────────
+  function renderTable(data) {
+    var MAX  = 200;
+    var show = data.slice(0, MAX);
+    document.getElementById('countBadge').textContent = data.length + ' 筆';
+    document.getElementById('limitNote').textContent  = data.length > MAX ? '（僅顯示前 ' + MAX + ' 筆）' : '';
+
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    var lastOno = null;
+
+    show.forEach(function (row) {
+      var tr = document.createElement('tr');
+      if (row.ono !== lastOno) { tr.classList.add('grp'); lastOno = row.ono; }
+      tr.innerHTML =
+        '<td class="c-muted">' + esc(row.time) + '</td>' +
+        '<td class="c-bold">'  + esc(row.ono)  + '</td>' +
+        '<td>'                 + esc(row.cust)  + '</td>' +
+        '<td class="c-code">'  + esc(row.code)  + '</td>' +
+        '<td class="c-right">' + esc(row.qty)   + '</td>' +
+        '<td class="c-price">' + (row.price !== '' ? esc(row.price) : '—') + '</td>' +
+        '<td class="c-unit">'  + esc(row.unit)  + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Export ────────────────────────────────
+  function doExport(data) {
+    if (!data || !data.length) { log('無資料可匯出', 'warn'); return; }
+
+    var wsData = [['訂單時間','訂單編號','客戶編號','產品貨號2','產品數量','產品實際成交價','產品單位']];
+    data.forEach(function (r) {
+      wsData.push([r.time, r.ono, r.cust, r.code, r.qty, r.price, r.unit]);
+    });
+
+    var ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [{wch:22},{wch:13},{wch:11},{wch:18},{wch:8},{wch:13},{wch:7}];
+
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Worksheet');
+
+    var now = new Date();
+    var p   = function (n) { return String(n).padStart(2,'0'); };
+    var out = '網購單匯入_' + now.getFullYear() + p(now.getMonth()+1) + p(now.getDate()) + '.xlsx';
+    XLSX.writeFile(wb, out);
+    log('✅ 已匯出：' + out + '（' + data.length + ' 筆）', 'ok');
+  }
+
+  // ── Step indicator ────────────────────────
+  function setStep(n) {
+    for (var i = 1; i <= 4; i++) {
+      var el  = document.getElementById('fs' + i);
+      var num = document.getElementById('fn' + i);
+      el.classList.remove('active', 'done');
+      if (i < n)        { el.classList.add('done');   num.textContent = '✓'; }
+      else if (i === n) { el.classList.add('active'); num.textContent = i;   }
+      else              {                             num.textContent = i;   }
+    }
+  }
+
+  // ── Log ───────────────────────────────────
+  function log(msg, type) {
+    var t    = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+    var div  = document.createElement('div');
+    div.className   = 'log-line ' + (type || '');
+    div.textContent = '[' + t + '] ' + msg;
+    var term = document.getElementById('logTerm');
+    term.appendChild(div);
+    term.scrollTop = term.scrollHeight;
+  }
+
+  // ── Utility ───────────────────────────────
+  function fmtBytes(b) {
+    if (b < 1024)    return b + ' B';
+    if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+    return (b/1048576).toFixed(1) + ' MB';
+  }
+
+}); // end DOMContentLoaded
+</script>
+</body>
+</html>
