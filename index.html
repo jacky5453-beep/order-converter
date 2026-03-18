@@ -6,6 +6,85 @@
 <title>網購單轉檔系統</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
+#lockScreen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #1a1a2e;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+.lock-box {
+  background: #22263a;
+  border: 1px solid #2e3350;
+  border-top: 3px solid #c84b31;
+  border-radius: 8px;
+  padding: 40px 36px;
+  width: 340px;
+  text-align: center;
+}
+.lock-icon { font-size: 40px; margin-bottom: 16px; }
+.lock-box h2 { color: #f4f1eb; font-size: 18px; font-weight: 900; letter-spacing: 1px; margin-bottom: 6px; }
+.lock-box p  { color: rgba(244,241,235,0.4); font-size: 12px; margin-bottom: 24px; }
+.lock-input {
+  width: 100%; padding: 12px 16px;
+  background: #1a1a2e; border: 1px solid #2e3350;
+  border-radius: 6px; color: #f4f1eb;
+  font-size: 18px; text-align: center;
+  letter-spacing: 4px; outline: none;
+  font-family: 'IBM Plex Mono', monospace;
+  margin-bottom: 14px;
+  transition: border-color 0.2s;
+}
+.lock-input:focus { border-color: #c84b31; }
+.lock-input.error { border-color: #ff4757; animation: shake 0.3s ease; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25%      { transform: translateX(-8px); }
+  75%      { transform: translateX(8px); }
+}
+.lock-btn {
+  width: 100%; padding: 12px;
+  background: #c84b31; color: white; border: none;
+  border-radius: 6px; font-size: 14px; font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer; letter-spacing: 1px;
+  transition: background 0.2s;
+}
+.lock-btn:hover { background: #a83926; }
+.lock-err { color: #ff4757; font-size: 12px; margin-top: 10px; height: 16px; }
+</style>
+<script>
+// Password check — runs before page renders
+(function() {
+  var PASS = '25220050';
+  var KEY  = 'oce_auth';
+  if (sessionStorage.getItem(KEY) === PASS) return; // already unlocked
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var lock = document.getElementById('lockScreen');
+    var inp  = document.getElementById('lockInput');
+    var err  = document.getElementById('lockErr');
+
+    function tryUnlock() {
+      if (inp.value === PASS) {
+        sessionStorage.setItem(KEY, PASS);
+        lock.style.opacity = '0';
+        lock.style.transition = 'opacity 0.3s';
+        setTimeout(function() { lock.style.display = 'none'; }, 300);
+      } else {
+        inp.classList.add('error');
+        err.textContent = '密碼錯誤，請再試一次';
+        inp.value = '';
+        setTimeout(function() { inp.classList.remove('error'); }, 400);
+      }
+    }
+
+    document.getElementById('lockBtn').addEventListener('click', tryUnlock);
+    inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') tryUnlock(); });
+    inp.focus();
+  });
+})();
+</script>
+<style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -354,6 +433,18 @@ tr.grp td { border-top: 2px solid var(--warm); }
 </style>
 </head>
 <body>
+
+<!-- 🔒 Password screen -->
+<div id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-icon">🔒</div>
+    <h2>網購單轉檔系統</h2>
+    <p>請輸入密碼以繼續</p>
+    <input type="password" id="lockInput" class="lock-input" placeholder="••••••••" maxlength="20">
+    <button id="lockBtn" class="lock-btn">確認登入</button>
+    <div class="lock-err" id="lockErr"></div>
+  </div>
+</div>
 
 <!-- Hidden file input — outside all stacking contexts -->
 <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;">
