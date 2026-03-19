@@ -776,15 +776,22 @@ window.addEventListener('DOMContentLoaded', function () {
 
   // ── Col map ───────────────────────────────
   function buildColMap(headers) {
-    var targets = [
+    // 需要「完全相符」的欄位（避免被較長的相似欄位名覆蓋）
+    var exactTargets = [
       '訂單時間','訂單編號','客戶編號',
-      '產品貨號2','產品貨號','產品數量','產品實際成交價','產品單位',
+      '產品貨號2','產品貨號','產品數量','產品實際成交價','產品單位'
+    ];
+    // 允許「包含」比對的欄位
+    var fuzzyTargets = [
       '加購產品名稱','加購產品貨號','加購產品數量',
       '贈品名稱','贈品數量','贈品規格','贈品貨號'
     ];
     var map = {};
     headers.forEach(function (h, i) {
-      targets.forEach(function (t) {
+      exactTargets.forEach(function (t) {
+        if (h === t) map[t] = i;
+      });
+      fuzzyTargets.forEach(function (t) {
         if (h === t || h.indexOf(t) >= 0) map[t] = i;
       });
     });
