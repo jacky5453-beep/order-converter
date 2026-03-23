@@ -751,6 +751,34 @@ window.addEventListener('DOMContentLoaded', function () {
           }
         }
 
+        // ── 合併相同客戶+貨號+價格的明細 ──────────
+        var mergeMap = {};
+        var mergeOrder = [];
+        allData.forEach(function (row) {
+          var key = row.cust + '|' + row.code + '|' + row.price;
+          if (mergeMap[key]) {
+            var existQty = parseFloat(mergeMap[key].qty) || 0;
+            var addQty   = parseFloat(row.qty) || 0;
+            mergeMap[key].qty = String(existQty + addQty);
+          } else {
+            mergeMap[key] = { time: row.time, ono: row.ono, cust: row.cust, code: row.code, qty: row.qty, price: row.price, unit: row.unit };
+            mergeOrder.push(key);
+          }
+        });
+        var beforeCount = allData.length;
+        allData = mergeOrder.map(function (k) { return mergeMap[k]; });
+        var mergedCount = beforeCount - allData.length;
+        if (mergedCount > 0) log('合併 ' + mergedCount + ' 筆相同貨號+價格的明細', 'info');
+
+        // ── 依產品貨號排序，相同貨號但不同價格排在一起 ──
+        allData.sort(function (a, b) {
+          if (a.code < b.code) return -1;
+          if (a.code > b.code) return 1;
+          var pa = parseFloat(a.price) || 0;
+          var pb = parseFloat(b.price) || 0;
+          return pa - pb;
+        });
+
         if (skipped > 0) log('略過 ' + skipped + ' 筆無效資料', 'warn');
         log('轉換完成，共 ' + allData.length + ' 筆明細', 'ok');
         setStep(3);
@@ -776,12 +804,10 @@ window.addEventListener('DOMContentLoaded', function () {
 
   // ── Col map ───────────────────────────────
   function buildColMap(headers) {
-    // 需要「完全相符」的欄位（避免被較長的相似欄位名覆蓋）
     var exactTargets = [
       '訂單時間','訂單編號','客戶編號',
       '產品貨號2','產品貨號','產品數量','產品實際成交價','產品單位'
     ];
-    // 允許「包含」比對的欄位
     var fuzzyTargets = [
       '加購產品名稱','加購產品貨號','加購產品數量',
       '贈品名稱','贈品數量','贈品規格','贈品貨號'
