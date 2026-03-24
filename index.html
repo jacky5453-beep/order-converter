@@ -430,6 +430,143 @@ tr.grp td { border-top: 2px solid var(--warm); }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* COMBO MANAGER MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 8000;
+  background: rgba(26,26,46,0.72); backdrop-filter: blur(3px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--paper); border: 1px solid var(--border);
+  border-top: 3px solid var(--gold);
+  border-radius: 8px; width: 680px; max-width: 95vw;
+  max-height: 88vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+}
+.modal-head {
+  padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-head h2 { font-size: 15px; font-weight: 900; }
+.modal-head p  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.modal-close {
+  width: 30px; height: 30px; border: 1px solid var(--border);
+  border-radius: 4px; background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--muted); transition: all 0.2s;
+}
+.modal-close:hover { border-color: var(--accent); color: var(--accent); }
+.modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+/* Combo list */
+.combo-list { display: flex; flex-direction: column; gap: 8px; }
+.combo-card {
+  border: 1px solid var(--border); border-radius: 4px;
+  background: var(--cream); overflow: hidden;
+}
+.combo-card-head {
+  padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none;
+}
+.combo-card-head:hover { background: var(--warm); }
+.combo-badge {
+  background: var(--gold); color: var(--ink);
+  font-size: 9px; font-weight: 700; padding: 2px 8px;
+  border-radius: 10px; font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 1px;
+}
+.combo-name { font-weight: 700; font-size: 13px; flex: 1; }
+.combo-count { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+.combo-card-body {
+  display: none; border-top: 1px solid var(--border);
+  padding: 12px 14px; background: var(--paper);
+}
+.combo-card-body.open { display: block; }
+.combo-items-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px; }
+.combo-items-table th {
+  text-align: left; padding: 5px 8px;
+  background: var(--ink); color: var(--paper);
+  font-size: 9px; letter-spacing: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.combo-items-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; }
+.combo-items-table tr:last-child td { border-bottom: none; }
+.combo-actions { display: flex; gap: 8px; }
+.btn-sm {
+  padding: 5px 12px; font-size: 11px; font-weight: 600;
+  border-radius: 3px; cursor: pointer; border: 1px solid;
+  font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s;
+}
+.btn-sm-edit  { border-color: var(--gold);   color: var(--gold);   background: transparent; }
+.btn-sm-edit:hover  { background: var(--gold); color: var(--ink); }
+.btn-sm-del   { border-color: var(--accent); color: var(--accent); background: transparent; }
+.btn-sm-del:hover   { background: var(--accent); color: #fff; }
+
+/* Add / Edit form */
+.combo-form { border: 1px solid var(--border); border-radius: 4px; padding: 16px; background: var(--cream); }
+.combo-form h3 { font-size: 12px; font-weight: 700; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.form-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+.form-label { font-size: 11px; font-weight: 600; min-width: 70px; color: var(--muted); }
+.form-input {
+  flex: 1; padding: 8px 10px;
+  background: var(--paper); border: 1px solid var(--border);
+  border-radius: 3px; font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace; color: var(--ink); outline: none;
+}
+.form-input:focus { border-color: var(--gold); }
+.combo-items-edit { margin-bottom: 12px; }
+.combo-items-edit table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.combo-items-edit th {
+  text-align: left; padding: 6px 8px;
+  background: var(--ink); color: var(--paper);
+  font-size: 9px; letter-spacing: 1px; font-family: 'IBM Plex Mono', monospace;
+}
+.combo-items-edit td { padding: 4px 4px; border-bottom: 1px solid var(--border); }
+.combo-items-edit input {
+  width: 100%; padding: 5px 7px;
+  background: var(--paper); border: 1px solid var(--border);
+  border-radius: 2px; font-size: 11px;
+  font-family: 'IBM Plex Mono', monospace; color: var(--ink); outline: none;
+}
+.combo-items-edit input:focus { border-color: var(--gold); }
+.btn-add-row {
+  font-size: 11px; font-weight: 600; padding: 5px 12px;
+  border: 1px dashed var(--border); border-radius: 3px;
+  background: transparent; color: var(--muted); cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s;
+}
+.btn-add-row:hover { border-color: var(--gold); color: var(--gold); }
+.btn-del-row {
+  background: none; border: none; cursor: pointer; color: var(--accent);
+  font-size: 14px; padding: 2px 6px; border-radius: 2px;
+}
+.btn-del-row:hover { background: rgba(200,75,49,0.1); }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.btn-save {
+  padding: 8px 20px; background: var(--gold); color: var(--ink);
+  border: none; border-radius: 3px; font-size: 12px; font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer; transition: all 0.15s;
+}
+.btn-save:hover { background: #b8880f; color: #fff; }
+.btn-cancel-form {
+  padding: 8px 16px; background: transparent; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 3px; font-size: 12px;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer; transition: all 0.15s;
+}
+.btn-cancel-form:hover { border-color: var(--muted); color: var(--ink); }
+
+/* Sidebar combo btn */
+.btn-combo {
+  width: 100%; border: 1px solid var(--gold); border-radius: var(--r);
+  padding: 10px; font-size: 12px; font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all 0.2s; color: var(--gold); background: transparent;
+}
+.btn-combo:hover { background: rgba(212,160,23,0.1); }
+.combo-hint { font-size: 10px; color: var(--muted); text-align: center; line-height: 1.5; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -459,7 +596,7 @@ tr.grp td { border-top: 2px solid var(--warm); }
   </div>
   <div class="header-meta">
     <span>官網訂單 → ERP 匯入格式</span>
-    <span class="header-pill">v2.1</span>
+    <span class="header-pill">v2.2</span>
   </div>
 </header>
 
@@ -513,6 +650,8 @@ tr.grp td { border-top: 2px solid var(--warm); }
       <div class="spin-wrap" id="spinWrap"><div class="spin"></div><span>資料處理中...</span></div>
       <button class="btn-export" id="btnExport" disabled>⬇ 匯出 ERP 格式 (.xlsx)</button>
       <button class="btn-outline" id="btnReset">↺ 重新上傳</button>
+      <button class="btn-combo" id="btnCombo">🧩 管理組合商品</button>
+      <div class="combo-hint" id="comboHint">尚未設定組合商品</div>
     </div>
 
     <div>
@@ -572,6 +711,56 @@ tr.grp td { border-top: 2px solid var(--warm); }
   </main>
 </div>
 
+<!-- COMBO MANAGER MODAL -->
+<div class="modal-overlay" id="comboModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div>
+        <h2>🧩 組合商品管理</h2>
+        <p>設定組合商品，轉檔時自動展開各項產品明細</p>
+      </div>
+      <button class="modal-close" id="comboModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="sec-label">已設定的組合商品</div>
+        <div class="combo-list" id="comboList">
+          <div style="color:var(--muted);font-size:12px;padding:12px 0;">尚未建立任何組合商品</div>
+        </div>
+      </div>
+      <div class="combo-form" id="comboForm" style="display:none;">
+        <h3 id="comboFormTitle">新增組合商品</h3>
+        <div class="form-row">
+          <span class="form-label">組合名稱</span>
+          <input class="form-input" id="comboNameInput" placeholder="例如：清明優惠組">
+        </div>
+        <div class="combo-items-edit">
+          <table>
+            <thead>
+              <tr>
+                <th>產品貨號2</th>
+                <th>產品數量</th>
+                <th>成交價</th>
+                <th>單位</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="comboItemsBody"></tbody>
+          </table>
+          <button class="btn-add-row" id="btnAddRow" style="margin-top:6px;">＋ 新增一列</button>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel-form" id="btnCancelForm">取消</button>
+          <button class="btn-save" id="btnSaveCombo">💾 儲存組合</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;">
+        <button class="btn-save" id="btnNewCombo" style="background:var(--accent);color:#fff;">＋ 新增組合商品</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Wait for DOM + XLSX lib ───────────────────
 window.addEventListener('DOMContentLoaded', function () {
@@ -586,6 +775,29 @@ window.addEventListener('DOMContentLoaded', function () {
   var allData   = [];
   var uploadedFile = null;
 
+  // ── Combo product database (localStorage) ────
+  var COMBO_KEY = 'oce_combos';
+  var comboDB = [];
+  try {
+    var saved = localStorage.getItem(COMBO_KEY);
+    if (saved) comboDB = JSON.parse(saved);
+  } catch(e) { comboDB = []; }
+
+  function saveComboDB() {
+    try { localStorage.setItem(COMBO_KEY, JSON.stringify(comboDB)); } catch(e) {}
+    updateComboHint();
+  }
+
+  function updateComboHint() {
+    var hint = document.getElementById('comboHint');
+    if (comboDB.length === 0) {
+      hint.textContent = '尚未設定組合商品';
+    } else {
+      hint.textContent = '已設定 ' + comboDB.length + ' 個組合商品';
+    }
+  }
+  updateComboHint();
+
   // DOM refs
   var fileInput   = document.getElementById('fileInput');
   var uploadLabel = document.getElementById('uploadLabel');
@@ -593,6 +805,148 @@ window.addEventListener('DOMContentLoaded', function () {
   var btnExport   = document.getElementById('btnExport');
   var btnReset    = document.getElementById('btnReset');
   var filterInput = document.getElementById('filterInput');
+
+  // ── Combo modal logic ─────────────────────────
+  var comboModal     = document.getElementById('comboModal');
+  var comboForm      = document.getElementById('comboForm');
+  var comboNameInput = document.getElementById('comboNameInput');
+  var comboItemsBody = document.getElementById('comboItemsBody');
+  var editingIndex   = -1; // -1 = new
+
+  document.getElementById('btnCombo').addEventListener('click', function() {
+    renderComboList();
+    comboForm.style.display = 'none';
+    comboModal.classList.add('show');
+  });
+  document.getElementById('comboModalClose').addEventListener('click', function() {
+    comboModal.classList.remove('show');
+  });
+  comboModal.addEventListener('click', function(e) {
+    if (e.target === comboModal) comboModal.classList.remove('show');
+  });
+
+  document.getElementById('btnNewCombo').addEventListener('click', function() {
+    openComboForm(-1);
+  });
+  document.getElementById('btnCancelForm').addEventListener('click', function() {
+    comboForm.style.display = 'none';
+  });
+  document.getElementById('btnAddRow').addEventListener('click', function() {
+    addItemRow('','','','');
+  });
+  document.getElementById('btnSaveCombo').addEventListener('click', saveCombo);
+
+  function openComboForm(idx) {
+    editingIndex = idx;
+    document.getElementById('comboFormTitle').textContent = idx === -1 ? '新增組合商品' : '編輯組合商品';
+    comboNameInput.value = idx === -1 ? '' : comboDB[idx].name;
+    comboItemsBody.innerHTML = '';
+    var items = idx === -1 ? [['','','','']] : comboDB[idx].items;
+    items.forEach(function(it) { addItemRow(it[0], it[1], it[2], it[3]); });
+    comboForm.style.display = 'block';
+    comboNameInput.focus();
+  }
+
+  function addItemRow(code, qty, price, unit) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><input value="' + esc(code)  + '" placeholder="AHG01"></td>' +
+      '<td><input value="' + esc(qty)   + '" placeholder="1" style="width:60px;"></td>' +
+      '<td><input value="' + esc(price) + '" placeholder="115" style="width:70px;"></td>' +
+      '<td><input value="' + esc(unit)  + '" placeholder="包" style="width:50px;"></td>' +
+      '<td><button class="btn-del-row" title="刪除此列">✕</button></td>';
+    tr.querySelector('.btn-del-row').addEventListener('click', function() { tr.remove(); });
+    comboItemsBody.appendChild(tr);
+  }
+
+  function saveCombo() {
+    var name = comboNameInput.value.trim();
+    if (!name) { alert('請輸入組合名稱'); return; }
+    var rows = comboItemsBody.querySelectorAll('tr');
+    var items = [];
+    rows.forEach(function(tr) {
+      var inputs = tr.querySelectorAll('input');
+      var code  = inputs[0].value.trim();
+      var qty   = inputs[1].value.trim();
+      var price = inputs[2].value.trim();
+      var unit  = inputs[3].value.trim();
+      if (code) items.push([code, qty, price, unit]);
+    });
+    if (items.length === 0) { alert('請至少新增一筆產品'); return; }
+    var combo = { name: name, items: items };
+    if (editingIndex === -1) {
+      comboDB.push(combo);
+    } else {
+      comboDB[editingIndex] = combo;
+    }
+    saveComboDB();
+    comboForm.style.display = 'none';
+    renderComboList();
+    log('組合商品「' + name + '」已儲存（' + items.length + ' 項）', 'ok');
+  }
+
+  function renderComboList() {
+    var list = document.getElementById('comboList');
+    if (comboDB.length === 0) {
+      list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0;">尚未建立任何組合商品</div>';
+      return;
+    }
+    list.innerHTML = '';
+    comboDB.forEach(function(combo, idx) {
+      var card = document.createElement('div');
+      card.className = 'combo-card';
+      var itemRows = combo.items.map(function(it) {
+        return '<tr><td>' + esc(it[0]) + '</td><td style="text-align:right">' + esc(it[1]) + '</td><td style="text-align:right;color:var(--green)">' + esc(it[2]) + '</td><td style="color:var(--muted)">' + esc(it[3]) + '</td></tr>';
+      }).join('');
+      card.innerHTML =
+        '<div class="combo-card-head">' +
+          '<span class="combo-badge">COMBO</span>' +
+          '<span class="combo-name">' + esc(combo.name) + '</span>' +
+          '<span class="combo-count">' + combo.items.length + ' 項</span>' +
+          '<span style="color:var(--muted);font-size:12px;">▼</span>' +
+        '</div>' +
+        '<div class="combo-card-body">' +
+          '<table class="combo-items-table">' +
+            '<thead><tr><th>貨號</th><th style="text-align:right">數量</th><th style="text-align:right">成交價</th><th>單位</th></tr></thead>' +
+            '<tbody>' + itemRows + '</tbody>' +
+          '</table>' +
+          '<div class="combo-actions">' +
+            '<button class="btn-sm btn-sm-edit" data-idx="' + idx + '">✏ 編輯</button>' +
+            '<button class="btn-sm btn-sm-del"  data-idx="' + idx + '">✕ 刪除</button>' +
+          '</div>' +
+        '</div>';
+      card.querySelector('.combo-card-head').addEventListener('click', function() {
+        var body = card.querySelector('.combo-card-body');
+        body.classList.toggle('open');
+      });
+      card.querySelector('.btn-sm-edit').addEventListener('click', function(e) {
+        e.stopPropagation();
+        openComboForm(parseInt(e.target.getAttribute('data-idx')));
+      });
+      card.querySelector('.btn-sm-del').addEventListener('click', function(e) {
+        e.stopPropagation();
+        var i = parseInt(e.target.getAttribute('data-idx'));
+        if (confirm('確定刪除組合商品「' + comboDB[i].name + '」？')) {
+          comboDB.splice(i, 1);
+          saveComboDB();
+          renderComboList();
+          log('已刪除組合商品', 'warn');
+        }
+      });
+      list.appendChild(card);
+    });
+  }
+
+  // ── Find combo by name (partial match) ───────
+  function findCombo(productName) {
+    var name = String(productName || '').trim();
+    for (var i = 0; i < comboDB.length; i++) {
+      if (name.indexOf(comboDB[i].name) >= 0 || comboDB[i].name === name) {
+        return comboDB[i];
+      }
+    }
+    return null;
+  }
 
   // ── File input change ─────────────────────
   fileInput.addEventListener('change', function () {
@@ -714,6 +1068,19 @@ window.addEventListener('DOMContentLoaded', function () {
         allData = [];
         var skipped = 0;
 
+        // ── 先找出每個客戶的第一筆訂單編號 ──────
+        var custFirstOno = {};
+        for (var i = 1; i < rows.length; i++) {
+          var r = rows[i];
+          if (!r || r.every(function(c){ return c===''||c==null; })) continue;
+          var g0 = function(k){ return col[k]!==undefined ? String(r[col[k]]!=null?r[col[k]]:'').trim() : ''; };
+          var ono0  = g0('訂單編號');
+          var cust0 = g0('客戶編號');
+          if (ono0 && cust0 && !custFirstOno[cust0]) {
+            custFirstOno[cust0] = ono0;
+          }
+        }
+
         for (var i = 1; i < rows.length; i++) {
           var r = rows[i];
           if (!r || r.every(function (c) { return c === '' || c == null; })) continue;
@@ -726,20 +1093,33 @@ window.addEventListener('DOMContentLoaded', function () {
           var ono   = g('訂單編號');
           var cust  = g('客戶編號');
           var pcode = g('產品貨號2') || g('產品貨號');
+          var pname = g('產品名稱') || pcode;
           var qty   = g('產品數量');
           var price = g('產品實際成交價');
           var unit  = g('產品單位');
 
           if (!ono || !pcode) { skipped++; continue; }
 
-          // 主商品
-          allData.push({ time: time, ono: ono, cust: cust, code: pcode, qty: qty, price: price, unit: unit });
+          // ── 統一使用該客戶第一筆訂單編號 ──
+          var useOno = custFirstOno[cust] || ono;
+
+          // ── 判斷是否為組合商品 ──────────────
+          var combo = findCombo(pname) || findCombo(pcode);
+          if (combo) {
+            log('展開組合商品「' + combo.name + '」→ ' + combo.items.length + ' 項', 'info');
+            combo.items.forEach(function(it) {
+              allData.push({ time: time, ono: useOno, cust: cust, code: it[0], qty: it[1], price: it[2], unit: it[3] });
+            });
+          } else {
+            // 主商品
+            allData.push({ time: time, ono: useOno, cust: cust, code: pcode, qty: qty, price: price, unit: unit });
+          }
 
           // 加購商品
           var addCode = g('加購產品貨號');
           var addQty  = g('加購產品數量');
           if (addCode) {
-            allData.push({ time: time, ono: ono, cust: cust, code: addCode, qty: addQty || '1', price: '', unit: '' });
+            allData.push({ time: time, ono: useOno, cust: cust, code: addCode, qty: addQty || '1', price: '', unit: '' });
           }
 
           // 贈品
@@ -747,7 +1127,7 @@ window.addEventListener('DOMContentLoaded', function () {
           var gQty  = g('贈品數量');
           var gSpec = g('贈品規格');
           if (gCode) {
-            allData.push({ time: time, ono: ono, cust: cust, code: gCode, qty: gQty || '1', price: '0', unit: gSpec });
+            allData.push({ time: time, ono: useOno, cust: cust, code: gCode, qty: gQty || '1', price: '0', unit: gSpec });
           }
         }
 
@@ -806,7 +1186,7 @@ window.addEventListener('DOMContentLoaded', function () {
   function buildColMap(headers) {
     var exactTargets = [
       '訂單時間','訂單編號','客戶編號',
-      '產品貨號2','產品貨號','產品數量','產品實際成交價','產品單位'
+      '產品貨號2','產品貨號','產品數量','產品實際成交價','產品單位','產品名稱'
     ];
     var fuzzyTargets = [
       '加購產品名稱','加購產品貨號','加購產品數量',
